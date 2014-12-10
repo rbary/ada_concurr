@@ -1,0 +1,20 @@
+\select@language {french}
+\contentsline {part}{I\hspace {1em}Rendez-vous ADA}{3}
+\contentsline {section}{\numberline {1}Producteur/ Consommateur}{3}
+\contentsline {subsection}{\numberline {1.1}1 Producteur/ 1 Consommateur: tampon de taille N}{3}
+\contentsline {subsection}{\numberline {1.2}Producteur/ Consommateur avec un tampon de taille 1}{3}
+\contentsline {section}{\numberline {2}Lecteurs/ R\IeC {\'e}dacteurs}{3}
+\contentsline {subsection}{\numberline {2.1}Priorit\IeC {\'e} aux Lecteurs}{3}
+\contentsline {subsection}{\numberline {2.2}Priorit\IeC {\'e} aux R\IeC {\'e}dacteurs}{3}
+\contentsline {subsection}{\numberline {2.3}Priorit\IeC {\'e}s \IeC {\'e}gales}{3}
+\contentsline {part}{II\hspace {1em}Objets/Types prot\IeC {\'e}g\IeC {\'e}s ADA 95}{4}
+\contentsline {section}{\numberline {3}Rappel des principes des Objets/Types prot\IeC {\'e}g\IeC {\'e}s en ADA 95}{4}
+\contentsline {subsection}{\numberline {3.1}D\IeC {\'e}finition}{4}
+\contentsline {subsection}{\numberline {3.2}Principe}{4}
+\contentsline {subsection}{\numberline {3.3}S\IeC {\'e}mantique}{4}
+\contentsline {subsection}{\numberline {3.4}Diff\IeC {\'e}rence avec les packages ADA}{4}
+\contentsline {section}{\numberline {4}}{4}
+\contentsline {section}{\numberline {5}Impl\IeC {\'e}mentation \IeC {\`a} l'aide des Objets/Types prot\IeC {\'e}g\IeC {\'e}s}{4}
+\contentsline {subsection}{\numberline {5.1}Producteur/ Consommateur}{4}
+\contentsline {subsection}{\numberline {5.2}Lecteurs/ R\IeC {\'e}dacteurs: sans priorit\IeC {\'e} et priorit\IeC {\'e} en ADA 95}{4}
+\contentsline {subsection}{\numberline {5.3}Le probl\IeC {\`e}me du carrefour \IeC {\`a} sens giratoire}{4}

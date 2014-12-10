@@ -1,0 +1,885 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[top=2cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage{verbatim}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\lstset{
+	basicstyle=\fontsize{8}{10}\selectfont\ttfamily
+}
+\fancyhead[L]{}
+\fancyhead[R]{}
+\renewcommand{\footrulewidth}{0.5pt}
+\fancyfoot[L]{\textit{Atelier B: Système Tunnel}}
+\fancyfoot[R]{}
+\title{\textbf{Rapport de TP : Atelier B - Système Tunnel}}
+\author{Franck Toulouze, Sébastien Berger, Roland Bary}
+\date{\today}
+\begin{document}
+\maketitle
+\begin{center}
+\maketitle{\textbf{Université de Pau et des Pays de l'Adour}}
+\end{center}
+\thispagestyle{empty}
+\newpage
+\pagestyle{fancy}
+\renewcommand{\contentsname}{Sommaire}
+\tableofcontents
+\newpage
+\section*{Introduction}
+L'objectif du TP est de se familiariser avec l'atelier de génie logiciel B, par la mise en œuvre du développement d'un logiciel qui réalise un simulateur complet du fonctionnement d'un tunnel. La réalisation de ce développement passera d'abord par une étape d'analyse du système à étudier, puis d'une modélisation en B.Ensuite viendra la construction de l'architecture du projet B et sa validation et enfin la génération du code.
+\section{Analyse du système}
+\subsection{Vue globale sur le simulateur}
+Le simulateur du tunnel peut être décomposé en 7 sous-systèmes:
+\begin{itemize}
+\item le sous-système TUNNEL qui permet la commande générale du tunnel
+\item le sous-système TUBE 1 qui commande le premier tube du tunnel
+\item le sous-système TUBE 2 qui commande le second tube du tunnel
+\item le sous-système TABLEAU DE BORD qui, en temps réel, collecte les informations sur le tunnel
+\item le sous-système PANNEAU qui, périodiquement, affiche le contenu du tableau de bord
+\item le sous-système INTERFACE au moyen duquel:
+\begin{itemize}
+\item l’opérateur saisit les commandes
+\item le système délivre à l’opérateur les informations sur l’ensemble du système
+\end{itemize}
+\item le sous-système LANCEUR qui lance la simulation du fonctionnement du tunnel
+\end{itemize}
+\subsection{Vue globale sur le sous-système TUNNEL}
+Le sous-système TUNNEL assure les fonctions suivantes :
+\begin{itemize}
+\item la mise en service ou hors service du tunnel
+\item la mise en service ou hors service des autres sous-systèmes
+\item le déclenchement de l’arrêt d’urgence
+\end{itemize}
+\begin{verbatim}
+/* propriete du systeme */
+ArretUrgence= 1
+=>
+Arret1 = 1 &
+Arret2 = 1 &
+charge1 = 0 &
+charge2 = 0 &
+\end{verbatim}
+le contrôle instantané de l’état de fonctionnement des autres systèmes
+\begin{itemize}
+\item renseigner sur la liste de circulations et la liste des pannes dans chaque tube
+\item Le contrôle, en fonctionnement nominal, de la compatibilité de la charge globale dans le tunnel:
+\end{itemize}
+\begin{verbatim}
+/* propriété du systeme */
+charge1
+charge2
+charge1
+<=MAX_TUBE1 &
+<=MAX_TUBE2 &
++ charge2 <=MAX_TUNNEL
+\end{verbatim}
+\subsection{Vue globale sur le sous-système TUBE}
+Le sous-système fonctionne comme un système indépendant assurant les services suivants:
+\begin{itemize}
+\item mise en service le tube
+\item mise hors service le tube
+\item prise en compte des requêtes du système TUNNEL
+\end{itemize}
+\begin{verbatim}
+ArretUrgence= 1
+=>
+Arret1 = 1 &
+charge1 = 0 &
+ArretUrgence= 1
+=>
+Arret2 = 1 &
+charge2 = 0 &
+\end{verbatim}
+\begin{itemize}
+\item régulation, de l’accès des véhicules, en fonction de sa charge instantanée:
+\end{itemize}
+\begin{verbatim}
+charge1 <=MAX_TUBE1
+charge2 <=MAX_TUBE2
+\end{verbatim}
+\begin{itemize}
+\item calcul de sa charge instantanée
+\item identification de tout véhicule entrant et son enregistrement dans une liste de circulations
+\item identification de tout véhicule sortant et mise à jour la liste de circulation
+\item identification de tout véhicule en panne et son enregistrement dans une liste des pannes
+\item identification d’un véhicule dépanné et mettre à jour la liste des pannes
+\end{itemize}
+\subsection{Vue globale sur le sous-système TABLEAU}
+Le tableau de bord est un sous-système indépendant et permet d’échantillonner et collecter en
+"temps réel", les informations relatives au fonctionnement du tunnel.
+Parmi ces informations, doit figurer:
+\begin{itemize}
+\item l’état de fonctionnement de chaque sous-système :TUNNEL, TUBE 1,TUBE 2, PANNEAU
+\item la liste des circulations dans chaque tube
+\item la liste des pannes dans chaque tube
+\end{itemize}
+\subsection{Vue globale sur le sous-système PANNEAU}
+Le panneau permet l’affichage des informations destinées au public principalement :
+\begin{itemize}
+\item l’état de service des 2 tubes
+\item l’état de l’accès aux 2 tubes
+\item la charge instantanée des tubes
+\item le nombre de véhicules en pannes dans les tubes
+\end{itemize}
+\subsection{Vue globale sur le sous-système INTERFACE}
+Le sous-système INTERFACE assure une fonction primordiale dans le simulateur. Il permet à
+l’opérateur de:
+\begin{itemize}
+\item formuler des requêtes afin de connaître l’état instantané de tous les autres sous-systèmes
+\item saisir les commandes pour simuler des événements, notamment :
+\begin{itemize}
+\item la mise en fonctionnement ou hors fonctionnement du tunnel
+\item la mise en fonctionnement ou hors fonctionnement d’un tube
+\item la fermeture/ouverture temporaire d’un tube
+\item l’entrée/sortie d’un véhicule d’un tube
+\item la panne d’un véhicule circulant dans un tube
+\item le dépannage d’un véhicule en panne
+\end{itemize}
+\end{itemize}
+Ce sous-système utilise un sous-système AFFICHAGE qui affiche :
+\begin{itemize}
+\item un menu des commandes
+\item un tableau qui fournit les informations provenant du tableau de bord
+\end{itemize}
+\subsection{Vue globale sur le sous-système LANCEUR}
+Le sous-système LANCEUR assure l’initialisation du simulateur. Il permet à l’opérateur d’activer le
+simulateur et accéder aux fonctions du sous-système INTERFACE.
+\section{Modélisation en B}
+\subsection{Module BASIC\_ IO}
+\textbf{BASIC\_ IO.mch}
+\begin{lstlisting}
+/* BASIC_IO */	
+MACHINE
+	BASIC_IO
+DEFINITIONS
+	CHAR == 0..255
+OPERATIONS
+	data <-- INTERVAL_READ(bi,bs) =
+	PRE
+			bi:NAT & bs:NAT &bi <= bs
+	THEN
+			data :: bi..bs
+	END;	
+INT_WRITE(nn) =
+	PRE
+		nn:NAT
+	THEN
+		skip
+	END;	
+STRING_WRITE(ss) =
+	PRE
+		ss:STRING
+	THEN
+		skip
+	END
+END
+\end{lstlisting}
+\subsection{Module Contexte}
+\textbf{Contexte.mch}
+\begin{lstlisting}
+/*Machine abstraite de specification du module CONTEXTE */
+MACHINE
+    Contexte
+SETS
+    VEHICULE ;
+    ETAT= {OUI , NON}
+CONCRETE_CONSTANTS
+    MAX_size,   /* constante auxiliaire, non utilisee*/
+    MAX_TUBE1,MAX_TUBE2, /* charge maximum des tubes */
+	MAX_TUNNEL /* charge maximum globale du tunnel */
+PROPERTIES
+	/* Typage des constantes: obligatoire */
+	MAX_TUBE1: NAT & MAX_TUBE2: NAT & 
+	MAX_TUNNEL: NAT &
+	MAX_size:NAT &
+/* proprietes de constantes */
+	MAX_TUBE1 < MAX_TUNNEL & MAX_TUBE2 < MAX_TUNNEL &
+	MAX_TUBE1 <= 500 &
+	MAX_TUBE2 <= 500 &
+	MAX_TUNNEL <= 800 
+END 
+\end{lstlisting}
+
+\textbf{Contexte\_ i.imp}
+\begin{lstlisting}
+/* Machine abstraite d'implementation du module CONTEXTE */
+IMPLEMENTATION
+   Contexte_i
+REFINES
+   Contexte
+VALUES
+	MAX_size= 400;
+	MAX_TUBE1= 400;
+	MAX_TUBE2= 350;
+	MAX_TUNNEL= 700;
+	VEHICULE = 1..10000
+END
+\end{lstlisting}
+\subsection{Module Interface}
+\textbf{Interface.mch}
+\begin{lstlisting}
+MACHINE
+    Interface
+/*Machine de creation d'interface de simulation
+   Peut-etre prise comme machine principale
+ */  
+OPERATIONS
+    /* l'operation doit etre sans parametre */
+    lancer_simulation = skip  
+END
+\end{lstlisting}
+
+\textbf{Interface\_ i.imp}
+\begin{lstlisting}
+/* Interface_i */
+IMPLEMENTATION
+   Interface_i
+REFINES
+    Interface 
+IMPORTS
+    Contexte,
+    Menu,
+    Tunnel
+OPERATIONS  
+    lancer_simulation =
+    BEGIN
+    		afficher_menu;
+    		lancer_commande
+    END
+END
+\end{lstlisting}
+\subsection{Module L\_ SET}
+\textbf{L\_ SET.mch}
+\begin{lstlisting}
+/* L_SET
+ */
+MACHINE
+    L_SET (LSET_maxsize, LSET_VALUE)
+    /* Cette Machine simule un ensemble fini par une sequence injective et bornee 
+    - LSET_maxsize = taille max de l'ensemble  
+    - LSET_VALUE = c'est le type des elements de l'ensemble genere par simulation*/
+CONSTRAINTS
+    LSET_maxsize : NAT
+ABSTRACT_VARIABLES
+    set_vrb /* unique variable d'encapsulation de la Machine qui
+            designe un ensemble fini d'elements de type LSET_VALUE */
+INVARIANT
+    set_vrb : seq (LSET_VALUE)
+INITIALISATION
+    set_vrb :( set_vrb : seq (LSET_VALUE) &   set_vrb = [] )
+    /* set_vrb est une sequence fini d'element de LSET_VALUE  initialement vide*/
+OPERATIONS  
+nn<-- CARD_SET =/* calcule le cardinal de l'ensemble set_vrb    */
+		BEGIN
+      	nn:: 0..LSET_maxsize
+		END;		
+	vv <-- VAL_SET (ii)= /* valeur de l'element de rang ii de l'ensemble set_vrb */
+	PRE
+    ii:NAT & ii: 1..size(set_vrb)
+	THEN  
+      vv:: LSET_VALUE
+  END;	  
+  bb,ii <--  FIND_SET(vv) = /* cherche vv dans l'ensemble set_vrb */
+  PRE
+      vv: LSET_VALUE
+  THEN
+      bb::BOOL || ii ::NAT     
+  END;		
+	INS_SET(vv)  = /* ajoute l'element vv a l'ensemble set_verb  */
+		PRE
+    	vv: LSET_VALUE
+		THEN
+    	skip
+ 		END;
+	RMV_SET(vv) = /* enleve l'element vv de l'ensemble set_vrb */
+		PRE
+    	vv: LSET_VALUE
+		THEN
+    	skip
+		END;
+    CLR_SET = /* initialise  l'ensemble set_vrb  */
+    BEGIN
+        skip
+    END
+ END
+\end{lstlisting}
+\subsection{Module Menu}
+\textbf{Menu.mch}
+\begin{lstlisting}
+/* MA de spzcification du module MENU */
+MACHINE
+    Menu
+OPERATIONS
+    afficher_menu =
+    BEGIN
+        skip /* Cette operation simple sera precisee au moment de son implementation */ 
+    END
+ END
+\end{lstlisting}
+
+\textbf{Menu\_ i.imp}
+\begin{lstlisting}
+/* MA d'implementation du module MENU*/
+IMPLEMENTATION
+ 		Menu_i
+REFINES
+   		Menu
+ IMPORTS
+ /*  instanciation et renommage par prefixage d'un module BASIC_IO*/
+ m1.BASIC_I
+ 
+OPERATIONS
+   afficher_menu =
+   BEGIN
+m1.STRING_WRITE( "***************************************************** \n") ; 
+m1.STRING_WRITE( "*                  MENU DE COMMANDES                * \n") ;
+m1.STRING_WRITE( "***************************************************** \n") ; 
+m1.STRING_WRITE( "                 pour quitter taper le code 0         \n") ; 
+m1.STRING_WRITE( "\n") ;  
+m1.STRING_WRITE( "\n") ;  
+m1.STRING_WRITE(" 10 	: Mettre hors service tube n1  \n") ;
+m1.STRING_WRITE(" 20 	: Mettre hors service tube n2  \n") ;
+m1.STRING_WRITE(" 11 	: Mettre en service tube n1 \n") ;
+m1.STRING_WRITE(" 21	: Mettre en service tube n2 \n") ;
+m1.STRING_WRITE(" 22	: Actionner arret urgence du tunnel \n") ;
+m1.STRING_WRITE(" 12 	: Ouvrir tube  n1 \n") ;
+m1.STRING_WRITE(" 22 	: Ouvrir tube  n2 \n") ;
+m1.STRING_WRITE(" 13 	: Fermer tube  n1 \n") ;
+m1.STRING_WRITE ("23 	: Fermer tube  n2\n") ;   
+m1.STRING_WRITE(" 14 	: Entrer dans tube  n1 \n") ;
+m1.STRING_WRITE ("24	: Entrer dans tube  n2 \n") ;
+m1.STRING_WRITE ("15 	: Sortir du tube  n1  \n") ;
+m1.STRING_WRITE(" 25 	: Sortir du tube  n2  \n") ;
+m1.STRING_WRITE (" 16 	: Tomber en panne dans tube  n1 \n") ;
+m1.STRING_WRITE (" 26	: Tomber en panne dans tube  n2 \n") ;
+m1.STRING_WRITE (" 17 	: Reprendre dans tube  n1 \n") ;
+m1.STRING_WRITE (" 27	: Reprendre dans tube  n2 \n");
+m1.STRING_WRITE (" 28	: Actionner arret urgence\n");
+m1.STRING_WRITE( " 0	: Fin de la simulation \n");
+m1.STRING_WRITE (" 1 	: Activer panneau affichage \n");
+m1.STRING_WRITE (" 2	: Activer tableau de bord\n")
+   END 
+END
+\end{lstlisting}
+\subsection{Module Panneau}
+\textbf{Panneau.mch}
+\begin{lstlisting}
+/* Panneau*/
+MACHINE
+    Panneau
+    
+OPERATIONS
+afficher_panneau =
+	BEGIN
+	skip  
+	/*A ce stade de de description,
+	 on ne sait pas  encore comment realiser l'affichage du panneau */
+	END 
+END
+\end{lstlisting}
+
+\textbf{Panneau\_ i.imp}
+\begin{lstlisting}
+IMPLEMENTATION
+   Panneau_i
+REFINES
+    Panneau
+SEES
+    Contexte
+IMPORTS
+    p1.BASIC_IO,
+    Tableaudebord
+
+OPERATIONS
+    afficher_panneau  =
+   VAR etat1, charge1, pannes1, etat2, charge2, pannes2 IN
+ 
+          etat1,charge1, pannes1 <-- echantillonner(1);
+          etat2,charge2, pannes2 <-- echantillonner(2)
+         /* A completer selon.... */         
+        END 
+END
+\end{lstlisting}
+\subsection{Module Tableau de bord}
+\textbf{tableauDeBord.mch}
+\begin{lstlisting}
+/* tableau_de_bord  */
+MACHINE
+    Tableaudebord
+    SEES 
+        t1.Tube, t2.Tube, Contexte
+        
+CONCRETE_VARIABLES
+        actif
+INVARIANT
+     actif:NAT &   actif :0..1
+INITIALISATION
+       actif := 0 
+        
+OPERATIONS
+        /* activer le tableau de bord  */
+        activer=
+        BEGIN
+        actif :( actif:0..1 & actif =1)
+        END;
+        /* desactiver le tableau de bord  */
+        desactiver =
+        BEGIN
+   		actif :( actif:0..1 & actif =0)
+    	END;
+    /* echantillonner des donnees pertinentes a partir du tableau de bord  */
+    	state, load, pannes  <-- echantillonner(num) =
+    	PRE
+    	num:NAT & num:1..2
+ THEN
+  state,load, pannes, actif :(  state:ETAT &	                                     
+   		     load:NAT &
+   		     pannes:NAT&
+   		     actif:NAT &   actif :0..1
+   		     ) 
+    	END
+END
+\end{lstlisting}
+
+\textbf{TableaudeBord\_ i.imp}
+\begin{lstlisting}
+IMPLEMENTATION
+	Tableaudebord_i
+REFINES  
+       Tableaudebord
+SEES 
+    t1.Tube, t2.Tube, Contexte
+   
+INITIALISATION
+    actif:= 0
+    
+OPERATIONS
+    activer =
+    BEGIN
+    actif:=1
+    END;
+    
+    desactiver =
+    BEGIN
+    actif:=0
+    END;
+    
+  state, load, pannes <--  echantillonner(num) =
+  		BEGIN  
+      		IF   num = 1 THEN  
+              state <-- t1.est_en_service;
+              load <-- t1.quelle_charge;
+              pannes<-- t1.nombre_pannes        					             	
+        		ELSIF   num = 2  THEN  					
+              state <-- t2.est_en_service;
+            	  load <-- t2.quelle_charge;
+            	  pannes <-- t2.nombre_pannes        				
+        END
+END 
+\end{lstlisting}
+\subsection{Module Tube}
+\textbf{Tube.mch}
+\begin{lstlisting}
+MACHINE
+/*la machine tube est parametree par la charge maximum notee MAX_charge */  
+Tube(MAX_charge) 
+CONSTRAINTS
+    MAX_charge: NAT & MAX_charge <= 500
+SEES
+      Contexte
+     
+CONCRETE_VARIABLES
+        ouvert , /* signal indicateur d'ouverture */
+        en_service, /* signal indicateur d'etat de service */
+        charge,
+        pannes,/* variable mesurant le nombre de pannes */
+        arretUrgence,
+    liste_vehicules, /* variable representant la liste des vehicules */
+    liste_pannes /* variable representant la liste des vehicules en panne */
+ 
+INVARIANT
+    liste_vehicules: FIN (VEHICULE) &
+    liste_pannes:  FIN (VEHICULE)   &
+    ouvert : ETAT  &
+    en_service : ETAT  &
+    pannes: NAT&
+    charge: NAT &
+    arretUrgence:ETAT &
+    /* proprietes du systeme */
+    charge = card (liste_vehicules) &
+    pannes = card (liste_pannes) &
+    charge <=  MAX_charge  &
+    (arretUrgence = OUI => charge =0 & en_service = NON)
+   
+ 
+   
+INITIALISATION
+     /* Definir l'etat initial du tube tube*/
+    liste_vehicules := {} || liste_pannes := {}   || ouvert:= NON
+    || arretUrgence:= NON || en_service := NON  || charge := 0 || pannes := 0
+   
+ 
+OPERATIONS
+ 
+  /* Commander la mise en service le tube avec initialisation des etats*/
+  mise_en_service =
+  BEGIN
+  en_service,ouvert, charge, pannes :( en_service:ETAT & ouvert:ETAT &
+    en_service= OUI &
+    pannes: NAT&
+    charge: NAT &
+    ouvert = NON &
+    charge = 0 &
+    pannes = 0  )
+  END;
+   
+ /* Commander la mise hors service du tube avec initialisation des etats*/
+  mise_hors_service =
+  BEGIN
+  en_service,ouvert, charge, pannes :( en_service:ETAT & ouvert:ETAT &
+            en_service= NON &
+            pannes: NAT&
+            charge: NAT &
+            ouvert = NON &
+            charge = 0 &
+            pannes = 0
+         )
+   END;
+ /* Informer sur l'etat de mise service ou hors service  du tube*/
+   etat  <--  est_en_service =
+                        BEGIN
+                etat:( etat: ETAT & en_service:ETAT &
+                        etat= en_service &
+                       (arretUrgence = OUI => charge =0 & en_service = NON)
+                     )
+  END;
+/* Interdire acces au tube */
+fermer =
+                      BEGIN
+              ouvert :( ouvert:ETAT & ouvert= NON)
+END;
+
+
+
+/* Autoriser acces au tube */  
+ouvrir =
+              BEGIN
+              ouvert :( ouvert:ETAT & ouvert= OUI)
+  END;
+
+/* Informer si l'acces au tube est autorisee ou non*/    
+etat  <--  is_open =
+                      BEGIN
+              etat:( etat: ETAT & ouvert:ETAT & etat= ouvert)
+ END;
+
+
+
+
+/* actionner arret urgence dans chaque tube du tunnel*/
+arret_urgence =
+              BEGIN
+              charge :(charge:NAT & charge = 0)
+END;
+
+
+
+/* informe sur la charge instantanee du tube*/  
+nv <-- quelle_charge =
+BEGIN
+    nv:(nv:NAT &
+                nv = charge &charge = card (liste_vehicules) &
+                charge <=  MAX_charge)                                                                                                                     
+END;
+/* Informe sur le nombre actuel de vehicules en panne dans le tube*/  
+
+ np <-- nombre_pannes=
+BEGIN
+    np:(np: NAT &
+                pannes = card (liste_pannes)
+)
+END;
+/* un vehicule vient d'entrer et... est en circulation du tube*/  
+entrer(un_vehicule) =
+PRE
+   un_vehicule : VEHICULE & charge < MAX_charge
+THEN
+liste_vehicules, charge :(  liste_vehicules: FIN (VEHICULE) &       charge:NAT &      
+         liste_vehicules = liste_vehicules$0 \/ { un_vehicule } &
+         charge = charge$0 +1  &
+         charge = card(liste_vehicules)
+      )
+END;
+
+
+/* un vehicule en circulation vient de sortir du tube*/
+sortir(un_vehicule) =
+PRE
+ un_vehicule : VEHICULE & un_vehicule : liste_vehicules
+THEN
+ liste_vehicules, charge:(   liste_vehicules: FIN (VEHICULE) & charge:NAT &
+    liste_vehicules= liste_vehicules$0 - { un_vehicule } &
+    charge = charge$0 -1 &
+    charge = card(liste_vehicules)
+ )
+END;
+
+
+/* un vehicule en circulation vient de tomber en panne dans le tube*/
+
+tomber_en_panne (un_vehicule) =
+            PRE
+            un_vehicule: VEHICULE &  un_vehicule: liste_vehicules & charge>0
+
+            THEN
+                liste_vehicules,liste_pannes, pannes, charge :(
+                liste_vehicules: FIN (VEHICULE) &
+                liste_pannes:  FIN (VEHICULE)  
+                & pannes:NAT & charge:NAT &
+                liste_vehicules= liste_vehicules$0 - { un_vehicule }  &
+                liste_pannes = liste_pannes$0 \/ { un_vehicule }&
+                pannes = card(liste_pannes)& charge = charge$0 -1 &                                                                                                          					    charge = card(liste_vehicules)
+                                                        )
+END;
+
+/* un vehicule vient d'etre depanne et et reprend la circulation dans tube*/
+reprendre(un_vehicule)=
+PRE
+un_vehicule : VEHICULE &  un_vehicule : liste_pannes &
+charge < MAX_charge & pannes >0
+THEN
+    liste_vehicules,liste_pannes, charge, pannes :(    
+      liste_vehicules: FIN (VEHICULE) &
+      liste_pannes:  FIN (VEHICULE)   &
+      pannes:NAT & charge:NAT &
+      liste_vehicules= liste_vehicules$0 \/ { un_vehicule }  &
+      liste_pannes = liste_pannes$0 - { un_vehicule }         &
+      charge = card(liste_vehicules) &
+      pannes = card(liste_pannes)
+  )
+END;
+ 
+/* pour tester si vehicule est en circulation dans tube*/
+  etat <-- est_en_circulation(un_vehicule) =
+            PRE
+            un_vehicule:VEHICULE
+            THEN
+            etat:(etat:ETAT & (un_vehicule: liste_vehicules => etat = OUI))
+END;
+
+
+/* pour tester si vehicule est en panne dans tube*/  
+etat <-- est_en_panne(un_vehicule) =
+      PRE
+              un_vehicule:VEHICULE
+      THEN
+      etat, liste_pannes :(etat:ETAT &  liste_pannes: FIN (VEHICULE)&
+      (un_vehicule: liste_pannes => etat = OUI)
+      )
+END
+END
+\end{lstlisting}
+
+\textbf{Tube\_ i.imp}
+\begin{lstlisting}
+IMPLEMENTATION
+Tube_i(MAX_charge)
+REFINES
+Tube
+SEES
+Contexte
+INITIALISATION
+liste_vehicules := {} ;
+liste_pannes := {} ;
+ouvert := NON ;
+arretUrgence := NON ;
+en_service := NON ;
+charge := 0 ;
+pannes := 0
+OPERATIONS
+mise_en_service =
+BEGIN
+   en_service := OUI;
+   ouvert := NON;
+   charge := 0;
+   pannes := 0
+END
+;
+mise_hors_service =
+BEGIN
+   en_service := NON;
+   ouvert := NON;
+   charge := 0;
+   pannes := 0
+END
+;
+etat <-- est_en_service =
+BEGIN
+   etat := en_service;
+   arretUrgence := OUI;
+   charge := 0;
+   en_service:= NON
+END
+;
+fermer =
+BEGIN
+  ouvert := NON
+END
+;
+ouvrir =
+BEGIN
+   ouvert := OUI
+END
+;
+etat <-- is_open =
+BEGIN
+   etat := ouvert
+END
+;
+arret_urgence =
+BEGIN
+   charge := 0
+END
+;
+nv <-- quelle_charge =
+BEGIN
+  nv := charge;
+  charge := card ( liste_vehicules )
+END
+;
+np <-- nombre_pannes =
+BEGIN
+   pannes := card ( liste_pannes )
+END
+;
+entrer ( un_vehicule ) =
+BEGIN
+   liste_vehicules := liste_vehicules \/ { un_vehicule };
+   charge := charge + 1;
+   charge := card ( liste_vehicules )
+END
+;
+sortir ( un_vehicule ) =
+BEGIN
+   liste_vehicules := liste_vehicules - { un_vehicule };
+   charge := charge - 1;
+   charge := card ( liste_vehicules )
+END
+;
+tomber_en_panne ( un_vehicule ) =
+BEGIN
+   liste_vehicules := liste_vehicules - { un_vehicule };
+   liste_pannes := liste_pannes \/ { un_vehicule };
+   pannes := card ( liste_pannes );
+   charge := charge - 1;
+   charge := card ( liste_vehicules )
+END
+;
+reprendre ( un_vehicule ) =
+BEGIN
+   liste_vehicules := liste_vehicules \/ { un_vehicule };
+   liste_pannes := liste_pannes - { un_vehicule };
+   charge := card ( liste_vehicules );
+   pannes := card ( liste_pannes )
+END
+;
+etat <-- est_en_circulation ( un_vehicule ) =
+BEGIN
+    etat := OUI
+END
+;
+etat <-- est_en_panne ( un_vehicule ) =
+BEGIN
+   etat := OUI
+END
+END
+\end{lstlisting}
+\subsection{Module Tunnel}
+\textbf{Tunnel.mch}
+\begin{lstlisting}
+MACHINE
+  Tunnel
+SEES
+  Contexte
+  
+CONCRETE_VARIABLES
+  charge1,          /*  variable qui mesure la charge du tube n1 */  
+  charge2,          /* variable qui mesure la charge du tube n2 */  
+  arretUrgence      /* variable indiquant un arret d'urgence */ 
+INVARIANT 
+  charge1 :NAT & charge2 :NAT & arretUrgence :ETAT & 
+  
+  /*  proprietes du systeme : voir cahier des charges*/  
+  charge1 <=MAX_TUBE1 &
+  charge2 <=MAX_TUBE2 &
+  charge1 + charge2  <=MAX_TUNNEL &
+  (arretUrgence = OUI => charge1=0 & charge2  = 0)
+
+INITIALISATION
+   /* Definir l'etat initial du tunnel */
+   charge1 := 0 || charge2 := 0||  arretUrgence:= NON
+   
+OPERATIONS
+   lancer_commande =
+   	BEGIN
+       charge1,charge2,arretUrgence:(
+   charge1 :NAT & charge2 :NAT & arretUrgence :ETAT & 
+ charge1 <=MAX_TUBE1 &
+  	 charge2 <=MAX_TUBE2 &
+  	 charge1 + charge2  <=MAX_TUNNEL &
+  	 (arretUrgence = OUI => charge1=0 & charge2  = 0)
+  					)
+       END
+END
+\end{lstlisting}
+
+\textbf{Tunnel\_ i.imp}
+\begin{lstlisting}
+IMPLEMENTATION
+   Tunnel_i
+REFINES
+   Tunnel
+IMPORTS
+   i1.BASIC_IO,Panneau,t1.Tube(MAX_TUBE1),t2.Tube(MAX_TUBE2)
+SEES
+    Contexte
+INITIALISATION
+     /* Definir l'etat initial du tunnel */
+     charge1 := 0; charge2 := 0;  arretUrgence:= NON
+ OPERATIONS
+     lancer_commande =
+     	BEGIN
+            arretUrgence := OUI;
+            charge1 :=0;
+			charge2  := 0
+         END
+ END
+\end{lstlisting}
+\newpage
+\section{Architecture du projet B}
+\begin{figure}[h]
+\begin{center}
+\includegraphics[scale=0.3]{arbreTunnel.png}
+\caption{Architecture du projet Système tunnel}
+\end{center}
+\end{figure}
+\newpage
+\section{Validation}
+\begin{figure}[h]
+\begin{center}
+\includegraphics[scale=0.3]{prouve.png}
+\caption{Validation du projet tunnel par les preuves}
+\end{center}
+\end{figure}
+\newpage
+\section*{Conclusion}
+Comparé au développement classique de logiciel, les étapes d'analyse sont plus importantes dans le développement en B. En effet, la nécessité de formaliser les besoins clairement augmente la durée de ces étapes mais elles sont bénéfique car les erreurs étant découvertes très tôt elles n'ont pas les conséquences graves causées par une découverte tardive. Une modélisation en B est une description mathématique qui représente certaines entités réelles :
+\begin{itemize}
+\item du système étudié
+\item ou de son contexte
+\end{itemize}
+Enfin B est une méthode dont la caractéristique est que les logiciels sont "corrects par construction".
+\end{document}

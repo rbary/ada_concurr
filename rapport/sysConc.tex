@@ -1,0 +1,83 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[top=2cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage{verbatim}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\lstset{
+	basicstyle=\fontsize{8}{10}\selectfont\ttfamily
+}
+\fancyhead[L]{}
+\fancyhead[R]{}
+\renewcommand{\footrulewidth}{0.5pt}
+\fancyfoot[L]{\textit{Système concurrents}}
+\fancyfoot[R]{}
+\title{\textbf{Rapport de TP : Systèmes concurrents}}
+\author{Charles Follet, Roland Bary}
+\date{\today}
+\begin{document}
+\maketitle
+\begin{center}
+\maketitle{\textbf{Université de Pau et des Pays de l'Adour}}
+\begin{center}
+\includegraphics[scale=0.3]{logoUppa.png}
+\end{center}
+\end{center}
+\thispagestyle{empty}
+\newpage
+\pagestyle{fancy}
+\renewcommand{\contentsname}{Sommaire}
+\tableofcontents
+\newpage
+\section*{Introduction}
+
+\part{Rendez-vous ADA}
+L'objectif ici est de résoudre ç l'aide de l'outil RDV ADA les problèmes de:
+\begin{itemize}
+\item Producteur/Consommateur
+\begin{itemize}
+\item[•]1 Producteur/ 1Consommateur: tampon de taille N
+\item[•]1 producteur/1 Consommateur avec un tampon de taille 1
+\end{itemize}
+\item Lecteurs/Rédacteurs
+\begin{itemize}
+\item[•] Priorité aux Lecteurs
+\item[•] Priorité aux Rédacteurs
+\item[•] Priorité égales
+\end{itemize}
+\end{itemize}
+\section{Producteur/ Consommateur}
+\subsection{1 Producteur/ 1 Consommateur: tampon de taille N}
+\subsection{Producteur/ Consommateur avec un tampon de taille 1}
+\section{Lecteurs/ Rédacteurs}
+\subsection{Priorité aux Lecteurs}
+\subsection{Priorité aux Rédacteurs}
+\subsection{Priorités égales}
+\newpage
+\part{Objets/Types protégés ADA 95}
+L'objectif de cette partie est de :
+\begin{itemize}
+\item Rappeler le principe des Objets/Types protégés en ADA 95 : définition, principe, sémantique, différence avec les packages ADA
+\item Comparer les  Objets/types protégés a d'autres outils comme  les sémaphores, RDV ADA, : pouvoir d'expression, difficulté/facilité d'utilisation, etc..
+\item  Implémenter à l'aide Objets/Types protégés:
+\begin{itemize}
+\item[•] Producteur/Consommateur
+\item[•] Lecteurs/ Rédacteurs: sans priorité et  priorité aux lecteurs
+\item[•] Le problème du Carrefour a sens giratoire  
+\end{itemize}
+\end{itemize}
+%%Beaucoup plus simples que les moniteurs de hoare
+\section{Rappel des principes des Objets/Types protégés en ADA 95}
+\subsection{Définition}
+\subsection{Principe}
+\subsection{Sémantique}
+\subsection{Différence avec les packages ADA}
+\section{}
+\section{Implémentation à l'aide des Objets/Types protégés}
+\subsection{Producteur/ Consommateur}
+\subsection{Lecteurs/ Rédacteurs: sans priorité et priorité en ADA 95}
+\subsection{Le problème du carrefour à sens giratoire}
+
+\end{document}
